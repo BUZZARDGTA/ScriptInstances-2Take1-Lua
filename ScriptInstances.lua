@@ -23,7 +23,8 @@ local generateInstanceLostMessage = function(script_name)
 end
 
 local SCRIPT_NAME <const> = "ScriptInstances.lua"
-local MY_ROOT <const> = menu.add_feature(SCRIPT_NAME, "parent", 0)
+local SCRIPT_TITLE <const> = "Script Instances"
+local MY_ROOT <const> = menu.add_feature(SCRIPT_TITLE, "parent", 0)
 
 -- LOGGING_SETTINGS
 local LOGGING_SETTINGS <const> = menu.add_feature("Logging Settings", "parent", MY_ROOT.id)
@@ -38,7 +39,7 @@ logResultsInConsoleOutput.hint = "Logs found and lost scripts in 2Take1's Consol
 logResultsInConsoleOutput.on = true
 -- LOGGING_SETTINGS
 
-menu.add_feature(string.rep("-", 35), "action", MY_ROOT.id)
+local ROOT_DIVIDER <const> = menu.add_feature("       " .. string.rep(" -", 23), "action", MY_ROOT.id)
 
 -- SCRIPTS_LIST
 local SCRIPTS_LIST <const> = menu.add_feature("Scripts List", "parent", MY_ROOT.id)
@@ -49,7 +50,7 @@ showAllScripts.hint = "When enabled, displays both active and inactive scripts."
 showAllScripts.on = false
 -- SCRIPTS_LIST
 
-local SCRIPTS_DIVIDER <const> = menu.add_feature(string.rep("-", 35), "action", SCRIPTS_LIST.id)
+local SCRIPTS_DIVIDER <const> = menu.add_feature(" " .. string.rep(" -", 23), "action", SCRIPTS_LIST.id)
 
 -- [06/04/2024] These *.ysc scripts were scraped from OpenIV's path: "GTAV\update\update2.rpf\x64\levels\gta5\script\script_rel.rpf\".
 local scripts_list <const> = {
