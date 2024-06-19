@@ -49,7 +49,7 @@ showAllScripts.hint = "When enabled, displays both active and inactive scripts."
 showAllScripts.on = false
 -- SCRIPTS_LIST
 
-menu.add_feature(string.rep("-", 35), "action", SCRIPTS_LIST.id)
+local SCRIPTS_DIVIDER <const> = menu.add_feature(string.rep("-", 35), "action", SCRIPTS_LIST.id)
 
 -- [06/04/2024] These *.ysc scripts were scraped from OpenIV's path: "GTAV\update\update2.rpf\x64\levels\gta5\script\script_rel.rpf\".
 local scripts_list <const> = {
@@ -1141,7 +1141,7 @@ end
 
 local function get_menu_feat_script_to_attach(base_script_name)
     if not is_any_menu_feat_script_attached() then
-        return "after", SCRIPTS_LIST.id
+        return "after", SCRIPTS_DIVIDER
     end
 
     local return_next_valid_feat = false
@@ -1199,7 +1199,7 @@ menu.create_thread(function()
                 local text
 
                 if not script.feat then
-                    script.feat = menu.add_feature(script_name, "action_value_i", SCRIPTS_LIST.id)
+                    script.feat = attachfeat(script_name, script)
                     script.feat.mod = 0
                 end
 
