@@ -25,5 +25,5 @@ This can be especially useful for developers trying to figure out how something 
 ### <div align="center">Console Output:</div>
 
 <div align="center">
-  <img src="https://github.com/Illegal-Services/ScriptInstances-2Take1-Lua/assets/62464560/aec0130d-48be-4e36-9186-dca0076e6938" alt="Console_Output" style="width: 45%;">
+  <img src="https://github.com/Illegal-Services/ScriptInstances-2Take1-Lua/assets/62464560/f480eb92-8552-4ebf-b637-57041822487d" alt="Console_Output" style="width: 45%;">
 </div>
