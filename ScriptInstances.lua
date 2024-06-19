@@ -17,6 +17,8 @@ end)
 exitScript.hint = 'Stop "' .. SCRIPT_NAME .. '"'
 -- exitScript
 
+local rootDividerMenu = menu.add_feature("       " .. string.rep(" -", 23), "action", myRootMenu.id)
+
 -- loggingSettingsMenu
 local loggingSettingsMenu = menu.add_feature("Logging Settings", "parent", myRootMenu.id)
 loggingSettingsMenu.hint = "Options for logging script activity and display settings."
@@ -29,8 +31,6 @@ local logResultsInConsoleOutput = menu.add_feature("Log Results in Console Outpu
 logResultsInConsoleOutput.hint = "Logs found and lost scripts in 2Take1's Console Output."
 logResultsInConsoleOutput.on = true
 -- loggingSettingsMenu
-
-local rootDividerMenu = menu.add_feature("       " .. string.rep(" -", 23), "action", myRootMenu.id)
 
 -- scriptsListMenu
 local scriptsListMenu = menu.add_feature("Scripts List", "parent", myRootMenu.id)
