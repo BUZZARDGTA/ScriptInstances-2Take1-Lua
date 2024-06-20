@@ -4,73 +4,12 @@
 
 
 -- Globals START
----- Global constants START
+---- Global constants 1/2 START
 local SCRIPT_NAME <const> = "ScriptInstances.lua"
 local SCRIPT_TITLE <const> = "Script Instances"
-local NATIVES <const> = require("lib/natives2845")
----- Global constants END
-
-
----- Global functions START
-local function create_tick_handler(handler)
-    return menu.create_thread(function()
-        while true do
-            handler()
-            system.yield(0)
-        end
-    end)
-end
-
-local function pluralize(word, count)
-    if count > 1 then
-        return word .. "s"
-    else
-        return word
-    end
-end
----- Global functions END
--- Globals END
-
-
-local myRootMenu = menu.add_feature(SCRIPT_TITLE, "parent", 0)
-local scriptsListThread
-
-local exitScript = menu.add_feature("#FF0000DD#Stop Script#DEFAULT#", "action", myRootMenu.id, function()
-    if
-        scriptsListThread
-        and not menu.has_thread_finished(scriptsListThread)
-    then
-        menu.delete_thread(scriptsListThread)
-    end
-    menu.clear_all_notifications() -- This will delete notifications from other scripts too. | Suggestion is open: https://discord.com/channels/1088976448452304957/1092480948353904752/1253065431720394842
-    menu.exit()
-end)
-exitScript.hint = 'Stop "' .. SCRIPT_NAME .. '"'
-
-local rootDividerMenu = menu.add_feature("       " .. string.rep(" -", 23), "action", myRootMenu.id)
-
-local loggingSettingsMenu = menu.add_feature("Logging Settings", "parent", myRootMenu.id)
-loggingSettingsMenu.hint = "Options for logging script activity and display settings."
-
-local logResultsInToastNotifications = menu.add_feature("Log Results in Toast Notificaitons", "toggle", loggingSettingsMenu.id)
-logResultsInToastNotifications.hint = "Logs found and lost scripts in 2Take1's Toast Notifications."
-logResultsInToastNotifications.on = true
-
-local logResultsInConsoleOutput = menu.add_feature("Log Results in Console Output", "toggle", loggingSettingsMenu.id)
-logResultsInConsoleOutput.hint = "Logs found and lost scripts in 2Take1's Console Output."
-logResultsInConsoleOutput.on = true
-
-local scriptsListMenu = menu.add_feature("Scripts List", "parent", myRootMenu.id)
-scriptsListMenu.hint = "An alphabetically sorted list of all Rockstar scripts, displaying the number of instances for each."
-
-local showAllScripts = menu.add_feature("Show All Scripts", "toggle", scriptsListMenu.id)
-showAllScripts.hint = "When enabled, displays both active and inactive scripts."
-showAllScripts.on = false
-
-local scriptsDividerMenu = menu.add_feature(" " .. string.rep(" -", 23), "action", scriptsListMenu.id)
-
+local RE_SCRITPS_NAME_PATTERN <const> = Regex("^([a-z0-9_]{1,35})$")
 -- [06/04/2024] These *.ysc scripts were scraped from OpenIV's path: "GTAV\update\update2.rpf\x64\levels\gta5\script\script_rel.rpf\".
-local scripts_list <const> = {
+local SCRIPTS_LIST <const> = {
     "abigail1",
     "abigail2",
     "achievement_controller",
@@ -1136,106 +1075,181 @@ local scripts_list <const> = {
     "xml_menus",
     "yoga",
 }
+---- Global constants 1/2 END
+
+
+---- Global functions START
+local function create_tick_handler(handler)
+    return menu.create_thread(function()
+        while true do
+            handler()
+            system.yield(0)
+        end
+    end)
+end
+
+local function pluralize(word, count)
+    if count > 1 then
+        return word .. "s"
+    else
+        return word
+    end
+end
+
+local function get_max_lenth_in_str_scripts_list(strings_list)
+    local max_length = 0
+    for _, str in ipairs(strings_list) do
+        if #str > max_length then
+            max_length = #str
+        end
+    end
+    return max_length
+end
+---- Global functions END
+
+---- Global constants 2/2 START
+local NATIVES <const> = require("lib/natives2845")
+local MAX_STR_LENTH_IN_SCRIPTS_LIST <const> = get_max_lenth_in_str_scripts_list(SCRIPTS_LIST)
+---- Global constants 2/2 END
+-- Globals END
+
+
+local myRootMenu = menu.add_feature(SCRIPT_TITLE, "parent", 0)
+local scriptsListThread
+
+local exitScript = menu.add_feature("#FF0000DD#Stop Script#DEFAULT#", "action", myRootMenu.id, function()
+    if
+        scriptsListThread
+        and not menu.has_thread_finished(scriptsListThread)
+    then
+        menu.delete_thread(scriptsListThread)
+    end
+    menu.clear_all_notifications() -- This will delete notifications from other scripts too. | Suggestion is open: https://discord.com/channels/1088976448452304957/1092480948353904752/1253065431720394842
+    menu.exit()
+end)
+exitScript.hint = 'Stop "' .. SCRIPT_NAME .. '"'
+
+local rootDividerMenu = menu.add_feature("       " .. string.rep(" -", 23), "action", myRootMenu.id)
+
+local scriptsListMenu = menu.add_feature("Scripts List", "parent", myRootMenu.id)
+scriptsListMenu.hint = "An alphabetically sorted list of all Rockstar scripts, displaying the number of instances for each."
+
+local showAllScripts = menu.add_feature("Show All Scripts", "toggle", scriptsListMenu.id)
+showAllScripts.hint = "When enabled, displays both active and inactive scripts."
+showAllScripts.on = false
+
+menu.add_feature(" " .. string.rep(" -", 23), "action", scriptsListMenu.id)
+
+local filterFeat = menu.add_feature("Filter: <None>", "action", scriptsListMenu.id, function(f)
+    local r, s
+    repeat
+        r, s = input.get("Enter search query:", "", MAX_STR_LENTH_IN_SCRIPTS_LIST, 0)
+        if r == 2 then return HANDLER_POP end
+        system.wait(0)
+    until r == 0
+
+    if s == "" then
+        f.name = "Filter: <None>"
+        f.data = nil
+    else
+        local matches = RE_SCRITPS_NAME_PATTERN.search(RE_SCRITPS_NAME_PATTERN, s)
+        if matches.count > 0 then
+            f.name = "Filter: " .. "<" .. s .. ">"
+            f.data = s
+        end
+    end
+end)
+filterFeat.hint = "Filter only scripts containing this pattern."
+
+local scriptsDividerMenu = menu.add_feature(" " .. string.rep(" -", 23), "action", scriptsListMenu.id)
+
+local settingsMenu = menu.add_feature("Settings", "parent", myRootMenu.id)
+settingsMenu.hint = "Options for logging script activity and display settings."
+
+local logResultsInToastNotifications = menu.add_feature("Log Results in Toast Notificaitons", "toggle", settingsMenu.id)
+logResultsInToastNotifications.hint = "Logs found and lost scripts in 2Take1's Toast Notifications."
+logResultsInToastNotifications.on = true
+
+local logResultsInConsoleOutput = menu.add_feature("Log Results in Console Output", "toggle", settingsMenu.id)
+logResultsInConsoleOutput.hint = "Logs found and lost scripts in 2Take1's Console Output."
+logResultsInConsoleOutput.on = true
+
 
 local scripts_table = {}
-
-for _, scriptName in ipairs(scripts_list) do
+for _, scriptName in ipairs(SCRIPTS_LIST) do
     scripts_table[scriptName] = {
         instances = 0,
+        feat = menu.add_feature(scriptName, "action_value_i", scriptsListMenu.id)
     }
+
+    local script = scripts_table[scriptName]
+    script.feat.mod = 0
+    script.feat.min = script.instances
+    script.feat.max = script.instances
+    script.feat.value = script.instances
+    script.feat.hidden = true
 end
 
-local function generate_found_instance_message(scriptName, current_script_instances)
-    return '"' .. scriptName .. '"' .. " is active with " .. current_script_instances .. " " .. pluralize("instance", current_script_instances)
-end
-
-local function generate_instance_lost_message(scriptName)
-    return '"' .. scriptName .. '"' .. " is no longer active"
-end
-
-local function is_any_menu_feat_script_attached()
-    for _, scriptName in ipairs(scripts_list) do
-        local script = scripts_table[scriptName]
-
-        if script.feat then
-            return true
-        end
-    end
-
-    return false
-end
-
-local function get_menu_feat_script_to_attach(baseScriptName)
-    if not is_any_menu_feat_script_attached() then
-        return "after", scriptsDividerMenu
-    end
-
-    local returnNextValidFeat = false
-    local prevValidFeat = nil
-
-    for _, scriptName in ipairs(scripts_list) do
-        local script = scripts_table[scriptName]
-
-        if scriptName == baseScriptName then
-            if prevValidFeat then
-                return "after", prevValidFeat
-            end
-            returnNextValidFeat = true
-        elseif script.feat then
-            if returnNextValidFeat then
-                return "before", script.feat
-            else
-                prevValidFeat = script.feat
-            end
-        end
-    end
-end
-
-local function attach_feat(scriptName, script)
-    local where, featScriptToAttach = get_menu_feat_script_to_attach(scriptName)
-
-    if where == "after" then
-        return menu.add_integrated_feature_after(scriptName, "action_value_i", featScriptToAttach)
-    elseif where == "before" then
-        return menu.add_integrated_feature_before(scriptName, "action_value_i", featScriptToAttach)
-    end
-end
+local activeScriptCounter = 0
+local inactiveScriptCounter = #SCRIPTS_LIST
 
 scriptsListThread = create_tick_handler(function()
-    for _, scriptName in ipairs(scripts_list) do
-        local script = scripts_table[scriptName]
-        local current_script_instances = NATIVES.SCRIPT.GET_NUMBER_OF_THREADS_RUNNING_THE_SCRIPT_WITH_THIS_HASH(gameplay.get_hash_key(scriptName))
-        local script_lost = false
-        local script_found = false
+    local function generate_found_instance_message(scriptName, currentScriptInstances)
+        return '"' .. scriptName .. '"' .. " is active with " .. currentScriptInstances .. " " .. pluralize("instance", currentScriptInstances)
+    end
 
-        if script.instances >= 1 and current_script_instances == 0 then
-            script_lost = true
-        elseif current_script_instances >= 1 and script.instances == 0 then
-            script_found = true
-        elseif current_script_instances ~= script.instances then
-            script_found = true
+    local function generate_instance_lost_message(scriptName)
+        return '"' .. scriptName .. '"' .. " is no longer active"
+    end
+
+    -- Loop through SCRIPTS_LIST
+    for _, scriptName in ipairs(SCRIPTS_LIST) do
+        local script = scripts_table[scriptName]
+        local scriptLost = false
+        local scriptFound = false
+        local scriptAltered = false
+        local scriptFiltered = false
+        local scriptShowEvenInactive = false
+        local scriptShownVeridict
+        local currentScriptInstances = NATIVES.SCRIPT.GET_NUMBER_OF_THREADS_RUNNING_THE_SCRIPT_WITH_THIS_HASH(gameplay.get_hash_key(scriptName))
+
+        -- Apply filter if set
+        if filterFeat.data and not string.find(scriptName, filterFeat.data) then
+            scriptFiltered = true
         end
 
-        script.instances = current_script_instances
+        -- Determine if script found or lost
+        if currentScriptInstances == 0 and script.instances >= 1 then
+            scriptLost = true
+        elseif currentScriptInstances >= 1 and script.instances == 0 then
+            scriptFound = true
+        elseif currentScriptInstances ~= script.instances then
+            scriptAltered = true
+        end
 
-        if script_found or script_lost then
-            local text
+        -- Update script instances
+        script.instances = currentScriptInstances
 
-            if not script.feat then
-                script.feat = attach_feat(scriptName, script)
-                script.feat.mod = 0
-            end
-
+        -- Handle script found or lost
+        if scriptFound or scriptLost or scriptAltered then
             script.feat.min = script.instances
             script.feat.max = script.instances
             script.feat.value = script.instances
 
-            if script_found then
+            local text
+            if scriptFound or scriptAltered then
+                if scriptFound then
+                    inactiveScriptCounter = inactiveScriptCounter - 1
+                    activeScriptCounter = activeScriptCounter + 1
+                end
                 text = generate_found_instance_message(scriptName, script.instances)
-            elseif script_lost then
+            elseif scriptLost then
+                activeScriptCounter = activeScriptCounter - 1
+                inactiveScriptCounter = inactiveScriptCounter + 1
                 text = generate_instance_lost_message(scriptName)
             end
 
+            -- Output to console or notify
             if logResultsInConsoleOutput.on then
                 print(text)
             end
@@ -1244,21 +1258,24 @@ scriptsListThread = create_tick_handler(function()
             end
         end
 
-        if script.instances <= 0 then
-            if showAllScripts.on then
-                if not script.feat then
-                    script.feat = attach_feat(scriptName, script)
-                    script.feat.mod = 0
-                    script.feat.min = script.instances
-                    script.feat.max = script.instances
-                    script.feat.value = script.instances
-                end
-            else
-                if script.feat then
-                    menu.delete_feature(script.feat.id)
-                    script.feat = nil
-                end
-            end
+        -- Handle scripts with no instances
+        if script.instances <= 0 and not showAllScripts.on then
+            scriptShowEvenInactive = true
         end
+
+        if scriptFiltered then
+            scriptShownVeridict = true
+        elseif scriptLost or scriptFound or scriptAltered then
+            scriptShownVeridict = false
+        elseif scriptShowEvenInactive then
+            scriptShownVeridict = scriptShowEvenInactive
+        end
+
+        script.feat.hidden = scriptShownVeridict
     end
+
+    ui.notify_above_map(
+        "Active Scripts:" .. activeScriptCounter ..
+        "\nInactive Scripts:" .. inactiveScriptCounter ..
+    , "", 2)
 end)
