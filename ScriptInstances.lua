@@ -8,9 +8,15 @@ local NATIVES <const> = require("lib/natives2845")
 
 
 local myRootMenu = menu.add_feature(SCRIPT_TITLE, "parent", 0)
+local scriptsListThread
 
 -- exitScript
-local exitScript = menu.add_feature("#FF0000CC#Stop Script#DEFAULT#", "action", myRootMenu.id, function()
+local exitScript = menu.add_feature("#FF0000DD#Stop Script#DEFAULT#", "action", myRootMenu.id, function()
+    if scriptsListThread then
+        if not menu.has_thread_finished(scriptsListThread) then
+            menu.delete_thread(scriptsListThread)
+        end
+    end
     menu.clear_all_notifications() -- This will delete notifications from other scripts too. | Suggestion is open: https://discord.com/channels/1088976448452304957/1092480948353904752/1253065431720394842
     menu.exit()
 end)
@@ -1126,11 +1132,11 @@ local function pluralize(word, count)
     end
 end
 
-local function generateFoundInstanceMessage(scriptName, current_script_instances)
+local function generate_found_instance_message(scriptName, current_script_instances)
     return '"' .. scriptName .. '"' .. " is active with " .. current_script_instances .. " " .. pluralize("instance", current_script_instances)
 end
 
-local function generateInstanceLostMessage(scriptName)
+local function generate_instance_lost_message(scriptName)
     return '"' .. scriptName .. '"' .. " is no longer active"
 end
 
@@ -1172,7 +1178,7 @@ local function get_menu_feat_script_to_attach(baseScriptName)
     end
 end
 
-local function attachfeat(scriptName, script)
+local function attach_feat(scriptName, script)
     local where, featScriptToAttach = get_menu_feat_script_to_attach(scriptName)
 
     if where == "after" then
@@ -1182,66 +1188,71 @@ local function attachfeat(scriptName, script)
     end
 end
 
-menu.create_thread(function()
-    while true do
-        system.yield(0)
+local function create_tick_handler(handler)
+    return menu.create_thread(function()
+        while true do
+            handler()
+            system.yield(0)
+        end
+    end)
+end
 
-        for _, scriptName in ipairs(scripts_list) do
-            local script = scripts_table[scriptName]
-            local current_script_instances = NATIVES.SCRIPT.GET_NUMBER_OF_THREADS_RUNNING_THE_SCRIPT_WITH_THIS_HASH(gameplay.get_hash_key(scriptName))
-            local script_lost = false
-            local script_found = false
+scriptsListThread = create_tick_handler(function()
+    for _, scriptName in ipairs(scripts_list) do
+        local script = scripts_table[scriptName]
+        local current_script_instances = NATIVES.SCRIPT.GET_NUMBER_OF_THREADS_RUNNING_THE_SCRIPT_WITH_THIS_HASH(gameplay.get_hash_key(scriptName))
+        local script_lost = false
+        local script_found = false
 
-            if script.instances >= 1 and current_script_instances == 0 then
-                script_lost = true
-            elseif current_script_instances >= 1 and script.instances == 0 then
-                script_found = true
-            elseif current_script_instances ~= script.instances then
-                script_found = true
+        if script.instances >= 1 and current_script_instances == 0 then
+            script_lost = true
+        elseif current_script_instances >= 1 and script.instances == 0 then
+            script_found = true
+        elseif current_script_instances ~= script.instances then
+            script_found = true
+        end
+
+        script.instances = current_script_instances
+
+        if script_found or script_lost then
+            local text
+
+            if not script.feat then
+                script.feat = attach_feat(scriptName, script)
+                script.feat.mod = 0
             end
 
-            script.instances = current_script_instances
+            script.feat.min = script.instances
+            script.feat.max = script.instances
+            script.feat.value = script.instances
 
-            if script_found or script_lost then
-                local text
+            if script_found then
+                text = generate_found_instance_message(scriptName, script.instances)
+            elseif script_lost then
+                text = generate_instance_lost_message(scriptName)
+            end
 
+            if logResultsInConsoleOutput.on then
+                print(text)
+            end
+            if logResultsInToastNotifications.on then
+                menu.notify(text, SCRIPT_NAME)
+            end
+        end
+
+        if script.instances <= 0 then
+            if showAllScripts.on then
                 if not script.feat then
-                    script.feat = attachfeat(scriptName, script)
+                    script.feat = attach_feat(scriptName, script)
                     script.feat.mod = 0
+                    script.feat.min = script.instances
+                    script.feat.max = script.instances
+                    script.feat.value = script.instances
                 end
-
-                script.feat.min = script.instances
-                script.feat.max = script.instances
-                script.feat.value = script.instances
-
-                if script_found then
-                    text = generateFoundInstanceMessage(scriptName, script.instances)
-                elseif script_lost then
-                    text = generateInstanceLostMessage(scriptName)
-                end
-
-                if logResultsInConsoleOutput.on then
-                    print(text)
-                end
-                if logResultsInToastNotifications.on then
-                    menu.notify(text, SCRIPT_NAME)
-                end
-            end
-
-            if script.instances <= 0 then
-                if showAllScripts.on then
-                    if not script.feat then
-                        script.feat = attachfeat(scriptName, script)
-                        script.feat.mod = 0
-                        script.feat.min = script.instances
-                        script.feat.max = script.instances
-                        script.feat.value = script.instances
-                    end
-                else
-                    if script.feat then
-                        menu.delete_feature(script.feat.id)
-                        script.feat = nil
-                    end
+            else
+                if script.feat then
+                    menu.delete_feature(script.feat.id)
+                    script.feat = nil
                 end
             end
         end
