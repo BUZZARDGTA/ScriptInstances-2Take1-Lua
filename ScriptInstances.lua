@@ -35,7 +35,7 @@ end
 local myRootMenu = menu.add_feature(SCRIPT_TITLE, "parent", 0)
 local scriptsListThread
 
--- exitScript
+-- Feature exitScript START
 local exitScript = menu.add_feature("#FF0000DD#Stop Script#DEFAULT#", "action", myRootMenu.id, function()
     if
         scriptsListThread
@@ -47,11 +47,11 @@ local exitScript = menu.add_feature("#FF0000DD#Stop Script#DEFAULT#", "action", 
     menu.exit()
 end)
 exitScript.hint = 'Stop "' .. SCRIPT_NAME .. '"'
--- exitScript
+-- Feature exitScript END
 
 local rootDividerMenu = menu.add_feature("       " .. string.rep(" -", 23), "action", myRootMenu.id)
 
--- loggingSettingsMenu
+-- Feature loggingSettingsMenu START
 local loggingSettingsMenu = menu.add_feature("Logging Settings", "parent", myRootMenu.id)
 loggingSettingsMenu.hint = "Options for logging script activity and display settings."
 
@@ -62,9 +62,9 @@ logResultsInToastNotifications.on = true
 local logResultsInConsoleOutput = menu.add_feature("Log Results in Console Output", "toggle", loggingSettingsMenu.id)
 logResultsInConsoleOutput.hint = "Logs found and lost scripts in 2Take1's Console Output."
 logResultsInConsoleOutput.on = true
--- loggingSettingsMenu
+-- Feature loggingSettingsMenu END
 
--- scriptsListMenu
+-- Feature scriptsListMenu START
 local scriptsListMenu = menu.add_feature("Scripts List", "parent", myRootMenu.id)
 scriptsListMenu.hint = "An alphabetically sorted list of all Rockstar scripts, displaying the number of instances for each."
 
@@ -1267,4 +1267,4 @@ scriptsListThread = create_tick_handler(function()
         end
     end
 end)
--- scriptsListMenu
+-- Feature scriptsListMenu END
