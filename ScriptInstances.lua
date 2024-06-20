@@ -4,7 +4,7 @@
 
 local SCRIPT_NAME <const> = "ScriptInstances.lua"
 local SCRIPT_TITLE <const> = "Script Instances"
-local NATIVES <const> = require("lib.NATIVES2845")
+local NATIVES <const> = require("lib/natives2845")
 
 
 local myRootMenu = menu.add_feature(SCRIPT_TITLE, "parent", 0)
