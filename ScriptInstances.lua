@@ -2,9 +2,34 @@
 -- https://playersquared.com/threads/nyd-projects-collection-v3.3255/
 
 
+-- Globals START
+
+-- Global constants START
 local SCRIPT_NAME <const> = "ScriptInstances.lua"
 local SCRIPT_TITLE <const> = "Script Instances"
 local NATIVES <const> = require("lib/natives2845")
+-- Global constants END
+
+-- Global functions START
+local function create_tick_handler(handler)
+    return menu.create_thread(function()
+        while true do
+            handler()
+            system.yield(0)
+        end
+    end)
+end
+
+local function pluralize(word, count)
+    if count > 1 then
+        return word .. "s"
+    else
+        return word
+    end
+end
+-- Global functions END
+
+-- Globals END
 
 
 local myRootMenu = menu.add_feature(SCRIPT_TITLE, "parent", 0)
@@ -1125,14 +1150,6 @@ for _, scriptName in ipairs(scripts_list) do
     }
 end
 
-local function pluralize(word, count)
-    if count > 1 then
-        return word .. "s"
-    else
-        return word
-    end
-end
-
 local function generate_found_instance_message(scriptName, current_script_instances)
     return '"' .. scriptName .. '"' .. " is active with " .. current_script_instances .. " " .. pluralize("instance", current_script_instances)
 end
@@ -1187,15 +1204,6 @@ local function attach_feat(scriptName, script)
     elseif where == "before" then
         return menu.add_integrated_feature_before(scriptName, "action_value_i", featScriptToAttach)
     end
-end
-
-local function create_tick_handler(handler)
-    return menu.create_thread(function()
-        while true do
-            handler()
-            system.yield(0)
-        end
-    end)
 end
 
 scriptsListThread = create_tick_handler(function()
