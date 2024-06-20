@@ -3,14 +3,14 @@
 
 
 -- Globals START
-
--- Global constants START
+---- Global constants START
 local SCRIPT_NAME <const> = "ScriptInstances.lua"
 local SCRIPT_TITLE <const> = "Script Instances"
 local NATIVES <const> = require("lib/natives2845")
--- Global constants END
+---- Global constants END
 
--- Global functions START
+
+---- Global functions START
 local function create_tick_handler(handler)
     return menu.create_thread(function()
         while true do
@@ -27,15 +27,13 @@ local function pluralize(word, count)
         return word
     end
 end
--- Global functions END
-
+---- Global functions END
 -- Globals END
 
 
 local myRootMenu = menu.add_feature(SCRIPT_TITLE, "parent", 0)
 local scriptsListThread
 
--- Feature exitScript START
 local exitScript = menu.add_feature("#FF0000DD#Stop Script#DEFAULT#", "action", myRootMenu.id, function()
     if
         scriptsListThread
@@ -47,11 +45,9 @@ local exitScript = menu.add_feature("#FF0000DD#Stop Script#DEFAULT#", "action", 
     menu.exit()
 end)
 exitScript.hint = 'Stop "' .. SCRIPT_NAME .. '"'
--- Feature exitScript END
 
 local rootDividerMenu = menu.add_feature("       " .. string.rep(" -", 23), "action", myRootMenu.id)
 
--- Feature loggingSettingsMenu START
 local loggingSettingsMenu = menu.add_feature("Logging Settings", "parent", myRootMenu.id)
 loggingSettingsMenu.hint = "Options for logging script activity and display settings."
 
@@ -62,9 +58,7 @@ logResultsInToastNotifications.on = true
 local logResultsInConsoleOutput = menu.add_feature("Log Results in Console Output", "toggle", loggingSettingsMenu.id)
 logResultsInConsoleOutput.hint = "Logs found and lost scripts in 2Take1's Console Output."
 logResultsInConsoleOutput.on = true
--- Feature loggingSettingsMenu END
 
--- Feature scriptsListMenu START
 local scriptsListMenu = menu.add_feature("Scripts List", "parent", myRootMenu.id)
 scriptsListMenu.hint = "An alphabetically sorted list of all Rockstar scripts, displaying the number of instances for each."
 
@@ -1267,4 +1261,3 @@ scriptsListThread = create_tick_handler(function()
         end
     end
 end)
--- Feature scriptsListMenu END
