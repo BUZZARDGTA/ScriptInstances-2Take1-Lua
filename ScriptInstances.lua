@@ -10,7 +10,7 @@ local NATIVES <const> = require("lib/natives2845")
 local myRootMenu = menu.add_feature(SCRIPT_TITLE, "parent", 0)
 
 -- exitScript
-local exitScript = menu.add_feature("Stop Script", "action", myRootMenu.id, function()
+local exitScript = menu.add_feature("#FF0000CC#Stop Script#DEFAULT#", "action", myRootMenu.id, function()
     menu.clear_all_notifications() -- This will delete notifications from other scripts too. | Suggestion is open: https://discord.com/channels/1088976448452304957/1092480948353904752/1253065431720394842
     menu.exit()
 end)
