@@ -1134,13 +1134,13 @@ local rootDividerMenu = menu.add_feature("       " .. string.rep(" -", 23), "act
 local scriptsListMenu = menu.add_feature("Scripts List", "parent", myRootMenu.id)
 scriptsListMenu.hint = "An alphabetically sorted list of all Rockstar scripts, displaying the number of instances for each."
 
-local showAllScripts = menu.add_feature("Show All Scripts", "toggle", scriptsListMenu.id)
-showAllScripts.hint = "When enabled, displays both active and inactive scripts."
-showAllScripts.on = false
+local showInactiveScripts = menu.add_feature("Show Inactive Scripts", "toggle", scriptsListMenu.id)
+showInactiveScripts.hint = "When enabled, displays both active and inactive scripts."
+showInactiveScripts.on = false
 
 menu.add_feature(" " .. string.rep(" -", 23), "action", scriptsListMenu.id)
 
-local filterFeat = menu.add_feature("Filter: <None>", "action", scriptsListMenu.id, function(f)
+local filterFeat = menu.add_feature("  Filter: <None>", "action", scriptsListMenu.id, function(f)
     local r, s
     repeat
         r, s = input.get("Enter search query:", "", MAX_STR_LENTH_IN_SCRIPTS_LIST, 0)
@@ -1149,12 +1149,10 @@ local filterFeat = menu.add_feature("Filter: <None>", "action", scriptsListMenu.
     until r == 0
 
     if s == "" then
-        f.name = "Filter: <None>"
         f.data = nil
     else
         local matches = RE_SCRITPS_NAME_PATTERN.search(RE_SCRITPS_NAME_PATTERN, s)
         if matches.count > 0 then
-            f.name = "Filter: " .. "<" .. s .. ">"
             f.data = s
         end
     end
@@ -1202,6 +1200,8 @@ scriptsListThread = create_tick_handler(function()
         return '"' .. scriptName .. '"' .. " is no longer active"
     end
 
+    local hiddenScriptCounter = 0
+
     -- Loop through SCRIPTS_LIST
     for _, scriptName in ipairs(SCRIPTS_LIST) do
         local script = scripts_table[scriptName]
@@ -1209,7 +1209,7 @@ scriptsListThread = create_tick_handler(function()
         local scriptFound = false
         local scriptAltered = false
         local scriptFiltered = false
-        local scriptShowEvenInactive = false
+        local scriptShowInactive = false
         local scriptShownVeridict
         local currentScriptInstances = NATIVES.SCRIPT.GET_NUMBER_OF_THREADS_RUNNING_THE_SCRIPT_WITH_THIS_HASH(gameplay.get_hash_key(scriptName))
 
@@ -1259,23 +1259,24 @@ scriptsListThread = create_tick_handler(function()
         end
 
         -- Handle scripts with no instances
-        if script.instances <= 0 and not showAllScripts.on then
-            scriptShowEvenInactive = true
+        if script.instances <= 0 and not showInactiveScripts.on then
+            scriptShowInactive = true
         end
 
         if scriptFiltered then
             scriptShownVeridict = true
         elseif scriptLost or scriptFound or scriptAltered then
             scriptShownVeridict = false
-        elseif scriptShowEvenInactive then
-            scriptShownVeridict = scriptShowEvenInactive
+        elseif scriptShowInactive then
+            scriptShownVeridict = scriptShowInactive
         end
 
         script.feat.hidden = scriptShownVeridict
+
+        if scriptFiltered or scriptShowInactive then
+            hiddenScriptCounter = hiddenScriptCounter + 1
+        end
     end
 
-    ui.notify_above_map(
-        "Active Scripts:" .. activeScriptCounter ..
-        "\nInactive Scripts:" .. inactiveScriptCounter ..
-    , "", 2)
+    filterFeat.name = "  Filter: <" .. (filterFeat.data or "None") .. "> (" .. #SCRIPTS_LIST - hiddenScriptCounter .. ")"
 end)
