@@ -12,10 +12,11 @@ local scriptsListThread
 
 -- exitScript
 local exitScript = menu.add_feature("#FF0000DD#Stop Script#DEFAULT#", "action", myRootMenu.id, function()
-    if scriptsListThread then
-        if not menu.has_thread_finished(scriptsListThread) then
-            menu.delete_thread(scriptsListThread)
-        end
+    if
+        scriptsListThread
+        and not menu.has_thread_finished(scriptsListThread)
+    then
+        menu.delete_thread(scriptsListThread)
     end
     menu.clear_all_notifications() -- This will delete notifications from other scripts too. | Suggestion is open: https://discord.com/channels/1088976448452304957/1092480948353904752/1253065431720394842
     menu.exit()
