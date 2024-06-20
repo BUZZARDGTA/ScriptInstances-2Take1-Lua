@@ -1,5 +1,6 @@
--- Formerly created by NotYourDope on PS3 and Xbox 360, here implemented in Lua for 2Take1 by IB_U_Z_Z_A_R_Dl.
--- https://playersquared.com/threads/nyd-projects-collection-v3.3255/
+-- Author: IB_U_Z_Z_A_R_Dl
+-- Description: Formerly created by NotYourDope on PS3 and Xbox 360 (https://playersquared.com/threads/nyd-projects-collection-v3.3255/), here implemented on PC in Lua for 2Take1 menu.
+-- GitHub Repository: https://github.com/Illegal-Services/ScriptInstances-2Take1-Lua
 
 
 -- Globals START
