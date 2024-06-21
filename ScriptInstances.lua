@@ -1110,6 +1110,11 @@ local function get_max_lenth_in_str_scripts_list(strings_list)
     return max_length
 end
 
+local function RGBAToInt(R, G, B, A)
+	A = A or 255
+	return ((R&0x0ff)<<0x00)|((G&0x0ff)<<0x08)|((B&0x0ff)<<0x10)|((A&0x0ff)<<0x18)
+end
+
 local function handle_script_exit()
     if scriptExitEventListener and event.remove_event_listener("exit", scriptExitEventListener) then
         scriptExitEventListener = nil
@@ -1118,9 +1123,12 @@ local function handle_script_exit()
     if scriptsListThread and not menu.has_thread_finished(scriptsListThread) then
         menu.delete_thread(scriptsListThread)
     end
-    menu.clear_all_notifications() -- This will delete notifications from other scripts too. | Suggestion is open: https://discord.com/channels/1088976448452304957/1092480948353904752/1253065431720394842
-    menu.exit()
 
+    -- This will delete notifications from other scripts too.
+    -- Suggestion is open: https://discord.com/channels/1088976448452304957/1092480948353904752/1253065431720394842
+    menu.clear_all_notifications()
+
+    menu.exit()
 end
 ---- Global functions END
 
@@ -1169,6 +1177,8 @@ local filterFeat = menu.add_feature("  Filter: <None>", "action", scriptsListMen
         local matches = RE_SCRITPS_NAME_PATTERN.search(RE_SCRITPS_NAME_PATTERN, s)
         if matches.count > 0 then
             f.data = s
+        else
+            menu.notify("Input doesn't match Regular Expression:\n" .. tostring("^([a-z0-9_]{1,35})$"), SCRIPT_TITLE, 6, RGBAToInt(255, 0, 0, 255))
         end
     end
 end)
