@@ -1178,7 +1178,7 @@ local filterFeat = menu.add_feature("  Filter: <None>", "action", scriptsListMen
         if matches.count > 0 then
             f.data = s
         else
-            menu.notify("Input doesn't match Regular Expression:\n" .. tostring("^([a-z0-9_]{1,35})$"), SCRIPT_TITLE, 6, RGBAToInt(255, 0, 0, 255))
+            menu.notify("Input doesn't match Regular Expression:\n" .. tostring("^([a-z0-9_]{1,35})$"), SCRIPT_NAME, 6, RGBAToInt(255, 0, 0, 255))
         end
     end
 end)
@@ -1277,7 +1277,7 @@ scriptsListThread = create_tick_handler(function()
 
             -- Output to console or notify
             if logResultsInConsoleOutput.on then
-                print(text)
+                print("[" .. os.date("%d-%m-%Y %H:%M:%S") .. "]: " .. text)
             end
             if logResultsInToastNotifications.on and not isFirstLoopIteration then
                 menu.notify(text, SCRIPT_NAME)
