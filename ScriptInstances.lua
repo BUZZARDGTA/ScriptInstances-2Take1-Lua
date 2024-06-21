@@ -17,28 +17,28 @@ local SORTED_TRUSTED_FLAGS <const> = {
 }
 local TRUSTED_FLAGS <const> = {
     LUA_TRUST_STATS = {
-        value = 1 << 0,
+        bitValue = 1 << 0,
         name = "Trusted Stats",
     },
     LUA_TRUST_SCRIPT_VARS = {
-        value = 1 << 1,
+        bitValue = 1 << 1,
         name = "Trusted Globals / Locals",
     },
     LUA_TRUST_NATIVES = {
-        value = 1 << 2,
+        bitValue = 1 << 2,
         name = "Trusted Natives",
     },
     LUA_TRUST_HTTP = {
-        value = 1 << 3,
+        bitValue = 1 << 3,
         name = "Trusted Http",
     },
     LUA_TRUST_MEMORY = {
-        value = 1 << 4,
+        bitValue = 1 << 4,
         name = "Trusted Memory",
     },
 }
 local REQUIERED_TRUSTED_FLAGS_VALUES <const> = {
-    TRUSTED_FLAGS.LUA_TRUST_NATIVES.value
+    TRUSTED_FLAGS.LUA_TRUST_NATIVES.bitValue
 }
 -- [06/04/2024] These *.ysc scripts were scraped from OpenIV's path: "GTAV\update\update2.rpf\x64\levels\gta5\script\script_rel.rpf\".
 local SCRIPTS_LIST <const> = {
@@ -1197,9 +1197,9 @@ local missingPermissions = {}
 for _, flagName in ipairs(SORTED_TRUSTED_FLAGS) do
     local flag = TRUSTED_FLAGS[flagName]
 
-    local isTrustFlagRequiered = value_exists_in_list(REQUIERED_TRUSTED_FLAGS_VALUES, flag.value)
+    local isTrustFlagRequiered = value_exists_in_list(REQUIERED_TRUSTED_FLAGS_VALUES, flag.bitValue)
 
-    if menu.is_trusted_mode_enabled(flag.value) then
+    if menu.is_trusted_mode_enabled(flag.bitValue) then
         if not isTrustFlagRequiered then
             table.insert(unnecessaryPermissions, flag.name)
         end
