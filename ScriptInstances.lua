@@ -37,7 +37,7 @@ local TRUSTED_FLAGS <const> = {
         name = "Trusted Memory",
     },
 }
-local REQUIERED_TRUSTED_FLAGS_VALUES <const> = {
+local REQUIERED_TRUSTED_FLAGS_BITVALUES <const> = {
     TRUSTED_FLAGS.LUA_TRUST_NATIVES.bitValue
 }
 -- [06/04/2024] These *.ysc scripts were scraped from OpenIV's path: "GTAV\update\update2.rpf\x64\levels\gta5\script\script_rel.rpf\".
@@ -1197,7 +1197,7 @@ local missingPermissions = {}
 for _, flagName in ipairs(SORTED_TRUSTED_FLAGS) do
     local flag = TRUSTED_FLAGS[flagName]
 
-    local isTrustFlagRequiered = value_exists_in_list(REQUIERED_TRUSTED_FLAGS_VALUES, flag.bitValue)
+    local isTrustFlagRequiered = value_exists_in_list(REQUIERED_TRUSTED_FLAGS_BITVALUES, flag.bitValue)
 
     if menu.is_trusted_mode_enabled(flag.bitValue) then
         if not isTrustFlagRequiered then
