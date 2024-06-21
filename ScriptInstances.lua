@@ -1077,6 +1077,10 @@ local SCRIPTS_LIST <const> = {
 }
 ---- Global constants 1/2 END
 
+---- Global variables START
+local scriptExitEventListener
+local scriptsListThread
+---- Global variables END
 
 ---- Global functions START
 local function create_tick_handler(handler)
@@ -1105,27 +1109,38 @@ local function get_max_lenth_in_str_scripts_list(strings_list)
     end
     return max_length
 end
+
+local function handle_script_exit()
+    if scriptExitEventListener and event.remove_event_listener("exit", scriptExitEventListener) then
+        scriptExitEventListener = nil
+    end
+
+    if scriptsListThread and not menu.has_thread_finished(scriptsListThread) then
+        menu.delete_thread(scriptsListThread)
+    end
+    menu.clear_all_notifications() -- This will delete notifications from other scripts too. | Suggestion is open: https://discord.com/channels/1088976448452304957/1092480948353904752/1253065431720394842
+    menu.exit()
+
+end
 ---- Global functions END
 
 ---- Global constants 2/2 START
 local NATIVES <const> = require("lib/natives2845")
 local MAX_STR_LENTH_IN_SCRIPTS_LIST <const> = get_max_lenth_in_str_scripts_list(SCRIPTS_LIST)
 ---- Global constants 2/2 END
+
+---- Global event listeners START
+scriptExitEventListener = event.add_event_listener("exit", function(f)
+    handle_script_exit()
+end)
+---- Global event listeners END
 -- Globals END
 
 
 local myRootMenu = menu.add_feature(SCRIPT_TITLE, "parent", 0)
-local scriptsListThread
 
 local exitScript = menu.add_feature("#FF0000DD#Stop Script#DEFAULT#", "action", myRootMenu.id, function()
-    if
-        scriptsListThread
-        and not menu.has_thread_finished(scriptsListThread)
-    then
-        menu.delete_thread(scriptsListThread)
-    end
-    menu.clear_all_notifications() -- This will delete notifications from other scripts too. | Suggestion is open: https://discord.com/channels/1088976448452304957/1092480948353904752/1253065431720394842
-    menu.exit()
+    handle_script_exit()
 end)
 exitScript.hint = 'Stop "' .. SCRIPT_NAME .. '"'
 
@@ -1190,6 +1205,7 @@ end
 
 local activeScriptCounter = 0
 local inactiveScriptCounter = #SCRIPTS_LIST
+local isFirstLoopIteration = true
 
 scriptsListThread = create_tick_handler(function()
     local function generate_found_instance_message(scriptName, currentScriptInstances)
@@ -1253,7 +1269,7 @@ scriptsListThread = create_tick_handler(function()
             if logResultsInConsoleOutput.on then
                 print(text)
             end
-            if logResultsInToastNotifications.on then
+            if logResultsInToastNotifications.on and not isFirstLoopIteration then
                 menu.notify(text, SCRIPT_NAME)
             end
         end
@@ -1279,4 +1295,8 @@ scriptsListThread = create_tick_handler(function()
     end
 
     filterFeat.name = "  Filter: <" .. (filterFeat.data or "None") .. "> (" .. #SCRIPTS_LIST - hiddenScriptCounter .. ")"
+
+    if isFirstLoopIteration then
+        isFirstLoopIteration = false
+    end
 end)
