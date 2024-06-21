@@ -8,6 +8,38 @@
 local SCRIPT_NAME <const> = "ScriptInstances.lua"
 local SCRIPT_TITLE <const> = "Script Instances"
 local RE_SCRITPS_NAME_PATTERN <const> = Regex("^([a-z0-9_]{1,35})$")
+local SORTED_TRUSTED_FLAGS <const> = {
+    "LUA_TRUST_STATS",
+    "LUA_TRUST_SCRIPT_VARS",
+    "LUA_TRUST_NATIVES",
+    "LUA_TRUST_HTTP",
+    "LUA_TRUST_MEMORY",
+}
+local TRUSTED_FLAGS <const> = {
+    LUA_TRUST_STATS = {
+        value = 1 << 0,
+        name = "Trusted Stats",
+    },
+    LUA_TRUST_SCRIPT_VARS = {
+        value = 1 << 1,
+        name = "Trusted Globals / Locals",
+    },
+    LUA_TRUST_NATIVES = {
+        value = 1 << 2,
+        name = "Trusted Natives",
+    },
+    LUA_TRUST_HTTP = {
+        value = 1 << 3,
+        name = "Trusted Http",
+    },
+    LUA_TRUST_MEMORY = {
+        value = 1 << 4,
+        name = "Trusted Memory",
+    },
+}
+local REQUIERED_TRUSTED_FLAGS_VALUES <const> = {
+    TRUSTED_FLAGS.LUA_TRUST_NATIVES.value
+}
 -- [06/04/2024] These *.ysc scripts were scraped from OpenIV's path: "GTAV\update\update2.rpf\x64\levels\gta5\script\script_rel.rpf\".
 local SCRIPTS_LIST <const> = {
     "abigail1",
@@ -1083,15 +1115,6 @@ local scriptsListThread
 ---- Global variables END
 
 ---- Global functions START
-local function create_tick_handler(handler)
-    return menu.create_thread(function()
-        while true do
-            handler()
-            system.yield(0)
-        end
-    end)
-end
-
 local function pluralize(word, count)
     if count > 1 then
         return word .. "s"
@@ -1110,12 +1133,32 @@ local function get_max_lenth_in_str_scripts_list(strings_list)
     return max_length
 end
 
-local function RGBAToInt(R, G, B, A)
+local function value_exists_in_list(list, value)
+    for _, v in ipairs(list) do
+        if v == value then
+            return true
+        end
+    end
+    return false
+end
+
+local function rgb_to_int(R, G, B, A)
 	A = A or 255
 	return ((R&0x0ff)<<0x00)|((G&0x0ff)<<0x08)|((B&0x0ff)<<0x10)|((A&0x0ff)<<0x18)
 end
 
-local function handle_script_exit()
+local function create_tick_handler(handler)
+    return menu.create_thread(function()
+        while true do
+            handler()
+            system.yield(0)
+        end
+    end)
+end
+
+local function handle_script_exit(params)
+    params = params or {}
+
     if scriptExitEventListener and event.remove_event_listener("exit", scriptExitEventListener) then
         scriptExitEventListener = nil
     end
@@ -1126,7 +1169,9 @@ local function handle_script_exit()
 
     -- This will delete notifications from other scripts too.
     -- Suggestion is open: https://discord.com/channels/1088976448452304957/1092480948353904752/1253065431720394842
-    menu.clear_all_notifications()
+    if params.clearAllNotifications then
+        menu.clear_all_notifications()
+    end
 
     menu.exit()
 end
@@ -1139,16 +1184,55 @@ local MAX_STR_LENTH_IN_SCRIPTS_LIST <const> = get_max_lenth_in_str_scripts_list(
 
 ---- Global event listeners START
 scriptExitEventListener = event.add_event_listener("exit", function(f)
-    handle_script_exit()
+    handle_script_exit({ clearAllNotifications = true })
 end)
 ---- Global event listeners END
 -- Globals END
 
 
+local unnecessaryPermissions = {}
+local missingPermissions = {}
+
+
+for _, flagName in ipairs(SORTED_TRUSTED_FLAGS) do
+    local flag = TRUSTED_FLAGS[flagName]
+
+    local isTrustFlagRequiered = value_exists_in_list(REQUIERED_TRUSTED_FLAGS_VALUES, flag.value)
+
+    if menu.is_trusted_mode_enabled(flag.value) then
+        if not isTrustFlagRequiered then
+            table.insert(unnecessaryPermissions, flag.name)
+        end
+    else
+        if isTrustFlagRequiered then
+            table.insert(missingPermissions, flag.name)
+        end
+    end
+end
+
+if #unnecessaryPermissions > 0 then
+    local unnecessaryPermissionsMessage = "You do not require the following " .. pluralize("permission", #unnecessaryPermissions) .. ":\n"
+    for _, permission in ipairs(unnecessaryPermissions) do
+        unnecessaryPermissionsMessage = unnecessaryPermissionsMessage .. permission .. "\n"
+    end
+    menu.notify(unnecessaryPermissionsMessage, SCRIPT_NAME, 6, rgb_to_int(255, 165, 0, 255))
+end
+
+if #missingPermissions > 0 then
+    local missingPermissionsMessage = "You need to enable the following " .. pluralize("permission", #missingPermissions) .. ":\n"
+    for _, permission in ipairs(missingPermissions) do
+        missingPermissionsMessage = missingPermissionsMessage .. permission .. "\n"
+    end
+    menu.notify(missingPermissionsMessage, SCRIPT_NAME, 6, rgb_to_int(255, 0, 0, 255))
+
+    handle_script_exit()
+end
+
+
 local myRootMenu = menu.add_feature(SCRIPT_TITLE, "parent", 0)
 
 local exitScript = menu.add_feature("#FF0000DD#Stop Script#DEFAULT#", "action", myRootMenu.id, function()
-    handle_script_exit()
+    handle_script_exit({ clearAllNotifications = true })
 end)
 exitScript.hint = 'Stop "' .. SCRIPT_NAME .. '"'
 
@@ -1178,7 +1262,7 @@ local filterFeat = menu.add_feature("  Filter: <None>", "action", scriptsListMen
         if matches.count > 0 then
             f.data = s
         else
-            menu.notify("Input doesn't match Regular Expression:\n" .. tostring("^([a-z0-9_]{1,35})$"), SCRIPT_NAME, 6, RGBAToInt(255, 0, 0, 255))
+            menu.notify("Input doesn't match Regular Expression:\n" .. tostring("^([a-z0-9_]{1,35})$"), SCRIPT_NAME, 6, rgb_to_int(255, 0, 0, 255))
         end
     end
 end)
