@@ -1193,7 +1193,6 @@ end)
 local unnecessaryPermissions = {}
 local missingPermissions = {}
 
-
 for _, flagName in ipairs(SORTED_TRUSTED_FLAGS) do
     local flag = TRUSTED_FLAGS[flagName]
 
@@ -1268,7 +1267,7 @@ local filterFeat = menu.add_feature("  Filter: <None>", "action", scriptsListMen
 end)
 filterFeat.hint = "Filter only scripts containing this pattern."
 
-local scriptsDividerMenu = menu.add_feature(" " .. string.rep(" -", 23), "action", scriptsListMenu.id)
+menu.add_feature(" " .. string.rep(" -", 23), "action", scriptsListMenu.id)
 
 local settingsMenu = menu.add_feature("Settings", "parent", myRootMenu.id)
 settingsMenu.hint = "Options for logging script activity and display settings."
@@ -1315,12 +1314,14 @@ scriptsListThread = create_tick_handler(function()
     -- Loop through SCRIPTS_LIST
     for _, scriptName in ipairs(SCRIPTS_LIST) do
         local script = scripts_table[scriptName]
+
         local scriptLost = false
         local scriptFound = false
         local scriptAltered = false
         local scriptFiltered = false
         local scriptShowInactive = false
-        local scriptShownVeridict
+        local scriptHiddenVeridict = false
+
         local currentScriptInstances = NATIVES.SCRIPT.GET_NUMBER_OF_THREADS_RUNNING_THE_SCRIPT_WITH_THIS_HASH(gameplay.get_hash_key(scriptName))
 
         -- Apply filter if set
@@ -1374,14 +1375,14 @@ scriptsListThread = create_tick_handler(function()
         end
 
         if scriptFiltered then
-            scriptShownVeridict = true
+            scriptHiddenVeridict = true
         elseif scriptLost or scriptFound or scriptAltered then
-            scriptShownVeridict = false
+            scriptHiddenVeridict = false
         elseif scriptShowInactive then
-            scriptShownVeridict = scriptShowInactive
+            scriptHiddenVeridict = scriptShowInactive
         end
 
-        script.feat.hidden = scriptShownVeridict
+        script.feat.hidden = scriptHiddenVeridict
 
         if scriptFiltered or scriptShowInactive then
             hiddenScriptCounter = hiddenScriptCounter + 1
