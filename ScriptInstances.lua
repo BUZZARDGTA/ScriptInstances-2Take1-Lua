@@ -1151,7 +1151,7 @@ local function create_tick_handler(handler)
     return menu.create_thread(function()
         while true do
             handler()
-            system.yield(0)
+            system.yield()
         end
     end)
 end
