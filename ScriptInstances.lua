@@ -4,43 +4,26 @@
 
 
 -- Globals START
----- Global constants 1/2 START
+---- Global variables START
+local scriptExitEventListener
+local scriptsListThread
+---- Global variables END
+
+---- Global constants 1/3 START
 local SCRIPT_NAME <const> = "ScriptInstances.lua"
 local SCRIPT_TITLE <const> = "Script Instances"
+local SCRIPT_SETTINGS__PATH <const> = "scripts\\ScriptInstances\\Settings.ini"
+local NATIVES <const> = require("lib\\natives2845")
+local HOME_PATH <const> = utils.get_appdata_path("PopstarDevs", "2Take1Menu")
 local RE_SCRITPS_NAME_PATTERN <const> = Regex("^([a-z0-9_]{1,35})$")
-local SORTED_TRUSTED_FLAGS <const> = {
-    "LUA_TRUST_STATS",
-    "LUA_TRUST_SCRIPT_VARS",
-    "LUA_TRUST_NATIVES",
-    "LUA_TRUST_HTTP",
-    "LUA_TRUST_MEMORY",
-}
 local TRUSTED_FLAGS <const> = {
-    LUA_TRUST_STATS = {
-        bitValue = 1 << 0,
-        name = "Trusted Stats",
-    },
-    LUA_TRUST_SCRIPT_VARS = {
-        bitValue = 1 << 1,
-        name = "Trusted Globals / Locals",
-    },
-    LUA_TRUST_NATIVES = {
-        bitValue = 1 << 2,
-        name = "Trusted Natives",
-    },
-    LUA_TRUST_HTTP = {
-        bitValue = 1 << 3,
-        name = "Trusted Http",
-    },
-    LUA_TRUST_MEMORY = {
-        bitValue = 1 << 4,
-        name = "Trusted Memory",
-    },
+    { name = "LUA_TRUST_STATS", menuName = "Trusted Stats", bitValue = 1 << 0, isRequiered = false },
+    { name = "LUA_TRUST_SCRIPT_VARS", menuName = "Trusted Globals / Locals", bitValue = 1 << 1, isRequiered = false },
+    { name = "LUA_TRUST_NATIVES", menuName = "Trusted Natives", bitValue = 1 << 2, isRequiered = true },
+    { name = "LUA_TRUST_HTTP", menuName = "Trusted Http", bitValue = 1 << 3, isRequiered = false },
+    { name = "LUA_TRUST_MEMORY", menuName = "Trusted Memory", bitValue = 1 << 4, isRequiered = false }
 }
-local REQUIERED_TRUSTED_FLAGS_BITVALUES <const> = {
-    TRUSTED_FLAGS.LUA_TRUST_NATIVES.bitValue
-}
--- [06/04/2024] These *.ysc scripts were scraped from OpenIV's path: "GTAV\update\update2.rpf\x64\levels\gta5\script\script_rel.rpf\".
+-- [26/06/2024] These *.ysc scripts were scraped from OpenIV's path: "GTAV\update\update2.rpf\x64\levels\gta5\script\script_rel.rpf\".
 local SCRIPTS_LIST <const> = {
     "abigail1",
     "abigail2",
@@ -1123,18 +1106,10 @@ local SCRIPTS_LIST <const> = {
 }
 ---- Global constants 1/2 END
 
----- Global variables START
-local scriptExitEventListener
-local scriptsListThread
----- Global variables END
-
----- Global functions START
-local function pluralize(word, count)
-    if count > 1 then
-        return word .. "s"
-    else
-        return word
-    end
+---- Global functions 1/2 START
+local function rgb_to_int(R, G, B, A)
+    A = A or 255
+    return ((R&0x0ff)<<0x00)|((G&0x0ff)<<0x08)|((B&0x0ff)<<0x10)|((A&0x0ff)<<0x18)
 end
 
 local function get_max_lenth_in_str_scripts_list(strings_list)
@@ -1146,19 +1121,76 @@ local function get_max_lenth_in_str_scripts_list(strings_list)
     end
     return max_length
 end
+---- Global functions 1/2 END
 
-local function value_exists_in_list(list, value)
-    for _, v in ipairs(list) do
-        if v == value then
-            return true
-        end
+---- Global constants 2/2 START
+local COLOR <const> = {
+    RED = rgb_to_int(255, 0, 0, 255),
+    ORANGE = rgb_to_int(255, 165, 0, 255),
+    GREEN = rgb_to_int(0, 255, 0, 255)
+}
+local MAX_STR_LENTH_IN_SCRIPTS_LIST <const> = get_max_lenth_in_str_scripts_list(SCRIPTS_LIST)
+---- Global constants 2/2 END
+
+---- Global functions 2/2 START
+local function pluralize(word, count)
+    if count > 1 then
+        return word .. "s"
+    else
+        return word
+    end
+end
+
+local function ends_with_newline(str)
+    if string.sub(str, -1) == "\n" then
+        return true
     end
     return false
 end
 
-local function rgb_to_int(R, G, B, A)
-	A = A or 255
-	return ((R&0x0ff)<<0x00)|((G&0x0ff)<<0x08)|((B&0x0ff)<<0x10)|((A&0x0ff)<<0x18)
+function read_file(file_path)
+    local file, err = io.open(file_path, "r")
+    if err then
+        return nil, err
+    end
+
+    local content = file:read("*a")
+
+    file:close()
+
+    return content, nil
+end
+
+local function get_collection_custom_value(collection, inputKey, inputValue, outputKey)
+    --[[
+    This function retrieves a specific value (or checks existence) from a collection based on a given input key-value pair.
+
+    Parameters:
+    collection (table): The collection to search within.
+    inputKey (string): The key within each item of the collection to match against `inputValue`.
+    inputValue (any): The value to match against `inputKey` within the collection.
+    outputKey (string or nil): Optional. The key within the matched item to retrieve its value.
+                                If nil, function returns true if item is found; false otherwise.
+
+    Returns:
+    If `outputKey` is provided and the item is resolved, it returns its value or nil;
+    otherwise, it returns true or false depending on whether the item was found within the collection.
+    ]]
+    for _, item in ipairs(collection) do
+        if item[inputKey] == inputValue then
+            if outputKey == nil then
+                return true
+            else
+                return item[outputKey]
+            end
+        end
+    end
+
+    if outputKey == nil then
+        return false
+    else
+        return nil
+    end
 end
 
 local function create_tick_handler(handler)
@@ -1170,15 +1202,43 @@ local function create_tick_handler(handler)
     end)
 end
 
-local function handle_script_exit(params)
-    params = params or {}
-
-    if scriptExitEventListener and event.remove_event_listener("exit", scriptExitEventListener) then
-        scriptExitEventListener = nil
+local function is_thread_runnning(threadId)
+    if threadId and not menu.has_thread_finished(threadId) then
+        return true
     end
 
-    if scriptsListThread and not menu.has_thread_finished(scriptsListThread) then
-        menu.delete_thread(scriptsListThread)
+    return false
+end
+
+local function remove_event_listener(eventType, listener)
+    if listener and event.remove_event_listener(eventType, listener) then
+        return
+    end
+
+    return listener
+end
+
+local function delete_thread(threadId)
+    if threadId and menu.delete_thread(threadId) then
+        return nil
+    end
+
+    return threadId
+end
+
+local function handle_script_exit(params)
+    params = params or {}
+    if params.clearAllNotifications == nil then
+        params.clearAllNotifications = false
+    end
+    if params.hasScriptCrashed == nil then
+        params.hasScriptCrashed = false
+    end
+
+    scriptExitEventListener = remove_event_listener("exit", scriptExitEventListener)
+
+    if is_thread_runnning(scriptsListThread) then
+        scriptsListThread = delete_thread(scriptsListThread)
     end
 
     -- This will delete notifications from other scripts too.
@@ -1187,14 +1247,171 @@ local function handle_script_exit(params)
         menu.clear_all_notifications()
     end
 
+    if params.hasScriptCrashed then
+        menu.notify("Oh no... Script crashed:(\nYou gotta restart it manually.", SCRIPT_NAME, 6, COLOR.RED)
+    end
+
     menu.exit()
 end
----- Global functions END
 
----- Global constants 2/2 START
-local NATIVES <const> = require("lib/natives2845")
-local MAX_STR_LENTH_IN_SCRIPTS_LIST <const> = get_max_lenth_in_str_scripts_list(SCRIPTS_LIST)
----- Global constants 2/2 END
+local function save_settings(params)
+    params = params or {}
+    if params.wasSettingsCorrupted == nil then
+        params.wasSettingsCorrupted = false
+    end
+
+    local file, err = io.open(SCRIPT_SETTINGS__PATH, "w")
+    if err then
+        handle_script_exit({ hasScriptCrashed = true })
+        return
+    end
+
+    local settingsContent = ""
+
+    for _, setting in ipairs(ALL_SETTINGS) do
+        settingsContent = settingsContent .. setting.key .. "=" .. tostring(setting.feat.on) .. "\n"
+    end
+
+    file:write(settingsContent)
+
+    file:close()
+
+    if params.wasSettingsCorrupted then
+        menu.notify("Settings file were corrupted but have been successfully restored and saved.", SCRIPT_TITLE, 6, COLOR.ORANGE)
+    else
+        menu.notify("Settings successfully saved.", SCRIPT_TITLE, 6, COLOR.GREEN)
+    end
+end
+
+local function load_settings(params)
+    local function custom_str_to_bool(string, only_match_against)
+        --[[
+        This function returns the boolean value represented by the string for lowercase or any case variation;
+        otherwise, nil.
+
+        Args:
+            string (str): The boolean string to be checked.
+            (optional) only_match_against (bool | None): If provided, the only boolean value to match against.
+        ]]
+        local need_rewrite_current_setting = false
+        local resolved_value = nil
+
+        if string == nil then
+            return nil, true -- Input is not a valid string
+        end
+
+        local string_lower = string:lower()
+
+        if string_lower == "true" then
+            resolved_value = true
+        elseif string_lower == "false" then
+            resolved_value = false
+        end
+
+        if resolved_value == nil then
+            return nil, true -- Input is not a valid boolean value
+        end
+
+        if (
+            only_match_against ~= nil
+            and only_match_against ~= resolved_value
+        ) then
+            return nil, true -- Input does not match the specified boolean value
+        end
+
+        if string ~= tostring(resolved_value) then
+            need_rewrite_current_setting = true
+        end
+
+        return resolved_value, need_rewrite_current_setting
+    end
+
+    params = params or {}
+    if params.settings_to_load == nil then
+        params.settings_to_load = {}
+
+        for _, setting in ipairs(ALL_SETTINGS) do
+            params.settings_to_load[setting.key] = setting.feat
+        end
+    end
+    if params.isScriptStartup == nil then
+        params.isScriptStartup = false
+    end
+
+    local settings_loaded = {}
+    local areSettingsLoaded = false
+    local hasResetSettings = false
+    local needRewriteSettings = false
+    local settingFileExisted = false
+
+    if utils.file_exists(SCRIPT_SETTINGS__PATH) then
+        settingFileExisted = true
+
+        local settings_content, err = read_file(SCRIPT_SETTINGS__PATH)
+        if err then
+            menu.notify("Settings could not be loaded.", SCRIPT_TITLE, 6, COLOR.RED)
+            handle_script_exit({ hasScriptCrashed = true })
+            return areSettingsLoaded
+        end
+
+        for line in settings_content:gmatch("[^\r\n]+") do
+            local key, value = line:match("^(.-)=(.*)$")
+            if key then
+                if get_collection_custom_value(ALL_SETTINGS, "key", key) then
+                    if params.settings_to_load[key] ~= nil then
+                        settings_loaded[key] = value
+                    end
+                else
+                    needRewriteSettings = true
+                end
+            else
+                needRewriteSettings = true
+            end
+        end
+
+        if not ends_with_newline(settings_content) then
+            needRewriteSettings = true
+        end
+
+        areSettingsLoaded = true
+    else
+        hasResetSettings = true
+
+        if not params.isScriptStartup then
+            menu.notify("Settings file not found.", SCRIPT_TITLE, 6, COLOR.RED)
+        end
+    end
+
+    for setting, _ in pairs(params.settings_to_load) do
+        local resolvedSettingValue = get_collection_custom_value(ALL_SETTINGS, "key", setting, "defaultValue")
+
+        local settingLoadedValue, needRewriteCurrentSetting = custom_str_to_bool(settings_loaded[setting])
+        if settingLoadedValue ~= nil then
+            resolvedSettingValue = settingLoadedValue
+        end
+        if needRewriteCurrentSetting then
+            needRewriteSettings = true
+        end
+
+        params.settings_to_load[setting].on = resolvedSettingValue
+    end
+
+    if not params.isScriptStartup then
+        if hasResetSettings then
+            menu.notify("Settings have been loaded and applied to their default values.", SCRIPT_TITLE, 6, COLOR.ORANGE)
+        else
+            menu.notify("Settings successfully loaded and applied.", SCRIPT_TITLE, 6, COLOR.GREEN)
+        end
+    end
+
+    if needRewriteSettings then
+        local wasSettingsCorrupted = settingFileExisted or false
+        save_settings({ wasSettingsCorrupted = wasSettingsCorrupted })
+    end
+
+    return areSettingsLoaded
+end
+---- Global functions 2/2 END
 
 ---- Global event listeners START
 scriptExitEventListener = event.add_event_listener("exit", function(f)
@@ -1207,18 +1424,14 @@ end)
 local unnecessaryPermissions = {}
 local missingPermissions = {}
 
-for _, flagName in ipairs(SORTED_TRUSTED_FLAGS) do
-    local flag = TRUSTED_FLAGS[flagName]
-
-    local isTrustFlagRequiered = value_exists_in_list(REQUIERED_TRUSTED_FLAGS_BITVALUES, flag.bitValue)
-
+for _, flag in ipairs(TRUSTED_FLAGS) do
     if menu.is_trusted_mode_enabled(flag.bitValue) then
-        if not isTrustFlagRequiered then
-            table.insert(unnecessaryPermissions, flag.name)
+        if not flag.isRequiered then
+            table.insert(unnecessaryPermissions, flag.menuName)
         end
     else
-        if isTrustFlagRequiered then
-            table.insert(missingPermissions, flag.name)
+        if flag.isRequiered then
+            table.insert(missingPermissions, flag.menuName)
         end
     end
 end
@@ -1228,7 +1441,7 @@ if #unnecessaryPermissions > 0 then
     for _, permission in ipairs(unnecessaryPermissions) do
         unnecessaryPermissionsMessage = unnecessaryPermissionsMessage .. permission .. "\n"
     end
-    menu.notify(unnecessaryPermissionsMessage, SCRIPT_NAME, 6, rgb_to_int(255, 165, 0, 255))
+    menu.notify(unnecessaryPermissionsMessage, SCRIPT_NAME, 6, COLOR.ORANGE)
 end
 
 if #missingPermissions > 0 then
@@ -1236,12 +1449,13 @@ if #missingPermissions > 0 then
     for _, permission in ipairs(missingPermissions) do
         missingPermissionsMessage = missingPermissionsMessage .. permission .. "\n"
     end
-    menu.notify(missingPermissionsMessage, SCRIPT_NAME, 6, rgb_to_int(255, 0, 0, 255))
+    menu.notify(missingPermissionsMessage, SCRIPT_NAME, 6, COLOR.RED)
 
     handle_script_exit()
 end
 
 
+-- === Main Menu Features === --
 local myRootMenu = menu.add_feature(SCRIPT_TITLE, "parent", 0)
 
 local exitScript = menu.add_feature("#FF0000DD#Stop Script#DEFAULT#", "action", myRootMenu.id, function()
@@ -1256,11 +1470,10 @@ scriptsListMenu.hint = "An alphabetically sorted list of all Rockstar scripts, d
 
 local showInactiveScripts = menu.add_feature("Show Inactive Scripts", "toggle", scriptsListMenu.id)
 showInactiveScripts.hint = "When enabled, displays both active and inactive scripts."
-showInactiveScripts.on = false
 
 menu.add_feature(" " .. string.rep(" -", 23), "action", scriptsListMenu.id)
 
-local filterFeat = menu.add_feature("  Filter: <None>", "action", scriptsListMenu.id, function(f)
+local filterSearch = menu.add_feature("  Filter: <None>", "action", scriptsListMenu.id, function(f)
     local r, s
     repeat
         r, s = input.get("Enter search query:", "", MAX_STR_LENTH_IN_SCRIPTS_LIST, 0)
@@ -1275,11 +1488,11 @@ local filterFeat = menu.add_feature("  Filter: <None>", "action", scriptsListMen
         if matches.count > 0 then
             f.data = s
         else
-            menu.notify("Input doesn't match Regular Expression:\n" .. tostring("^([a-z0-9_]{1,35})$"), SCRIPT_NAME, 6, rgb_to_int(255, 0, 0, 255))
+            menu.notify("Input doesn't match Regular Expression:\n" .. tostring("^([a-z0-9_]{1,35})$"), SCRIPT_NAME, 6, COLOR.RED)
         end
     end
 end)
-filterFeat.hint = "Filter only scripts containing this pattern."
+filterSearch.hint = "Filter only scripts containing this pattern."
 
 menu.add_feature(" " .. string.rep(" -", 23), "action", scriptsListMenu.id)
 
@@ -1288,13 +1501,33 @@ settingsMenu.hint = "Options for logging script activity and display settings."
 
 local logResultsInToastNotifications = menu.add_feature("Log Results in Toast Notificaitons", "toggle", settingsMenu.id)
 logResultsInToastNotifications.hint = "Logs found and lost scripts in 2Take1's Toast Notifications."
-logResultsInToastNotifications.on = true
 
 local logResultsInConsoleOutput = menu.add_feature("Log Results in Console Output", "toggle", settingsMenu.id)
 logResultsInConsoleOutput.hint = "Logs found and lost scripts in 2Take1's Console Output."
-logResultsInConsoleOutput.on = true
+
+menu.add_feature("       " .. string.rep(" -", 23), "action", settingsMenu.id)
+
+ALL_SETTINGS = {
+    {key = "showInactiveScripts", defaultValue = false, feat = showInactiveScripts},
+    {key = "logResultsInToastNotifications", defaultValue = true, feat = logResultsInToastNotifications},
+    {key = "logResultsInConsoleOutput", defaultValue = true, feat = logResultsInConsoleOutput}
+}
+
+local loadSettings = menu.add_feature('Load Settings', "action", settingsMenu.id, function()
+    load_settings()
+end)
+loadSettings.hint = 'Load saved settings from your file: "' .. HOME_PATH .. "\\" .. SCRIPT_SETTINGS__PATH .. '".\n\nDeleting this file will apply the default settings.'
+
+local saveSettings = menu.add_feature('Save Settings', "action", settingsMenu.id, function()
+    save_settings()
+end)
+saveSettings.hint = 'Save your current settings to the file: "' .. HOME_PATH .. "\\" .. SCRIPT_SETTINGS__PATH .. '".'
 
 
+load_settings({ isScriptStartup = true })
+
+
+-- === Main Loop Initialization === --
 local scripts_table = {}
 for _, scriptName in ipairs(SCRIPTS_LIST) do
     scripts_table[scriptName] = {
@@ -1314,6 +1547,7 @@ local activeScriptCounter = 0
 local inactiveScriptCounter = #SCRIPTS_LIST
 local isFirstLoopIteration = true
 
+-- === Main Loop === --
 scriptsListThread = create_tick_handler(function()
     local function generate_found_instance_message(scriptName, currentScriptInstances)
         return '"' .. scriptName .. '"' .. " is active with " .. currentScriptInstances .. " " .. pluralize("instance", currentScriptInstances)
@@ -1325,7 +1559,6 @@ scriptsListThread = create_tick_handler(function()
 
     local hiddenScriptCounter = 0
 
-    -- Loop through SCRIPTS_LIST
     for _, scriptName in ipairs(SCRIPTS_LIST) do
         local script = scripts_table[scriptName]
 
@@ -1338,12 +1571,10 @@ scriptsListThread = create_tick_handler(function()
 
         local currentScriptInstances = NATIVES.SCRIPT.GET_NUMBER_OF_THREADS_RUNNING_THE_SCRIPT_WITH_THIS_HASH(gameplay.get_hash_key(scriptName))
 
-        -- Apply filter if set
-        if filterFeat.data and not string.find(scriptName, filterFeat.data) then
+        if filterSearch.data and not string.find(scriptName, filterSearch.data) then
             scriptFiltered = true
         end
 
-        -- Determine if script found or lost
         if currentScriptInstances == 0 and script.instances >= 1 then
             scriptLost = true
         elseif currentScriptInstances >= 1 and script.instances == 0 then
@@ -1352,10 +1583,8 @@ scriptsListThread = create_tick_handler(function()
             scriptAltered = true
         end
 
-        -- Update script instances
         script.instances = currentScriptInstances
 
-        -- Handle script found or lost
         if scriptFound or scriptLost or scriptAltered then
             script.feat.min = script.instances
             script.feat.max = script.instances
@@ -1374,16 +1603,14 @@ scriptsListThread = create_tick_handler(function()
                 text = generate_instance_lost_message(scriptName)
             end
 
-            -- Output to console or notify
             if logResultsInConsoleOutput.on then
-                print("[" .. os.date("%d-%m-%Y %H:%M:%S") .. "]: " .. text)
+                print(text)
             end
             if logResultsInToastNotifications.on and not isFirstLoopIteration then
                 menu.notify(text, SCRIPT_NAME)
             end
         end
 
-        -- Handle scripts with no instances
         if script.instances <= 0 and not showInactiveScripts.on then
             scriptShowInactive = true
         end
@@ -1403,7 +1630,7 @@ scriptsListThread = create_tick_handler(function()
         end
     end
 
-    filterFeat.name = "  Filter: <" .. (filterFeat.data or "None") .. "> (" .. #SCRIPTS_LIST - hiddenScriptCounter .. ")"
+    filterSearch.name = "  Filter: <" .. (filterSearch.data or "None") .. "> (" .. #SCRIPTS_LIST - hiddenScriptCounter .. ")"
 
     if isFirstLoopIteration then
         isFirstLoopIteration = false
