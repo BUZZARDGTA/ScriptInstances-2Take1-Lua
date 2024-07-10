@@ -1484,7 +1484,7 @@ local filterSearch = menu.add_feature("  Filter: <None>", "action", scriptsListM
     if s == "" then
         f.data = nil
     else
-        local matches = RE_SCRITPS_NAME_PATTERN.search(RE_SCRITPS_NAME_PATTERN, s)
+        local matches = RE_SCRITPS_NAME_PATTERN:search(s)
         if matches.count > 0 then
             f.data = s
         else
