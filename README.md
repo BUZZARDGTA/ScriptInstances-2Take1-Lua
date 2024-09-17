@@ -1,3 +1,15 @@
+# PROJECT ARCHIVED / FAREWELL
+
+On September 17, 2024, R* added the [BattleEye Anti-Cheat](https://www.battleye.com/) to GTA Online, meaning I can no longer work on this or any of my other scripts. All of my 2Take1 Mod Menu scripts will now be archived.
+
+It's been a blast-fun, rewarding, and full of good vibes-to learn scripting for GTA 5, making my own stuff. But, yeah, it was never exactly allowed, and all good things must come to an end.
+
+Thanks to everyone who supported my work, whether up close or from a distance. It really kept me motivated.
+
+If you were into my GTA scripts, you might be interested in a project I'm still working on: [GTA-V-Session-Sniffer](https://github.com/Illegal-Services/GTA-V-Session-Sniffer).
+
+---
+
 # Script Instances
 
 Formerly created [by NotYourDope on PS3 and Xbox 360](https://playersquared.com/threads/nyd-projects-collection-v3.3255/), here implemented on PC in Lua for 2Take1 menu.
